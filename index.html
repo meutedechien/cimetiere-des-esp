@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cimetière des ESP</title>
+<script src="clipper.js"></script>
+<style>
+  body { font: 14px -apple-system, sans-serif; margin: 0; display: flex; height: 100vh; background: #f4f4f4; }
+  form { width: 300px; padding: 14px; overflow: auto; overflow-x: hidden; background: #fff; border-right: 1px solid #ddd; }
+  fieldset { border: 1px solid #ddd; border-radius: 6px; margin: 0 0 10px; }
+  legend { font-weight: 600; }
+  label { display: flex; white-space: nowrap; font-size: 13px; justify-content: space-between; align-items: center; margin: 4px 0; gap: 8px; }
+  input[type=number] { width: 46px; }
+  .unite { display: inline-flex; align-items: center; gap: 3px; } .unite small { color: #888; width: 1.6em; } select { width: 110px; }
+  textarea { width: 100%; box-sizing: border-box; }
+  button { font-size: 15px; padding: 8px; width: 100%; margin-bottom: 8px; cursor: pointer; }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  main svg { width: 100%; height: 100%; background: #fff; box-shadow: 0 1px 6px #0002; }
+  #mdf { position: sticky; top: -14px; z-index: 1; background: #fff; padding: 6px 0; height: 220px; border-bottom: 1px solid #eee; }  /* reste visible quand on fait défiler les réglages */
+  #mdf svg { width: 100%; height: 100%; }
+  #info { font-size: 12px; color: #666; }
+  details { border: 1px solid #ddd; border-radius: 6px; margin: 0 0 10px; padding: 6px 12px; }
+  summary { font-weight: 600; cursor: pointer; }
+  summary label { display: inline-flex; margin: 0; font-size: 14px; }
+  #f:has(#marges:checked) .auto { display: none; }
+  svg text { cursor: move; user-select: none; pointer-events: bounding-box; }
+  @media print {  /* seulement le plan, en vraie grandeur */
+    form { display: none; } body { display: block; height: auto; background: #fff; }
+    main { display: block; padding: 0; } main svg { box-shadow: none; } .apercu { display: none; }
+    [fill="#0000ff"] { fill: #000; }  /* sur papier : la gravure (ligne du cadre, texte) en noir */
+  }
+</style>
+</head>
+<body>
+<form id="f">
+  <button type="button" id="hasard">🎲 Un autre cadre</button>
+  <div id="mdf"></div>
+  <p id="info"></p>
+  <fieldset><legend>Composant</legend>
+    <label>Largeur <input type="number" id="ow" value="25" step="0.5"></label>
+    <label>Hauteur <input type="number" id="oh" value="34" step="0.5"></label>
+    <label class="auto">Jeu autour <input type="number" id="jeu" value="3" step="0.5"></label>
+    <label class="auto">Place pour le texte <input type="number" id="tz" value="14" step="0.5"></label>
+  </fieldset>
+  <details name="menu"><summary><label><input type="checkbox" id="marges"> Espacement manuel</label></summary>
+    <label>En haut <input type="number" id="mh" step="0.5"></label>
+    <label>En bas <input type="number" id="mb" step="0.5"></label>
+    <label>Chaque côté <input type="number" id="mc" step="0.5"></label>
+  </details>
+  <details name="menu"><summary>Cadre</summary>
+    <label>Largeur du tour <input type="number" id="tour" value="7" step="0.5"></label>
+    <label>Épaisseur ligne <input type="number" id="trait" value="1.5" step="0.1"></label>
+    <label>Coins <select id="coin">
+      <option value="droit">droits</option><option value="chanfrein">chanfrein</option>
+      <option value="arrondi">arrondis</option><option value="creux">creux</option>
+      <option value="cran" selected>cran</option><option value="double">double cran</option>
+    </select></label>
+    <label>Taille des coins <input type="number" id="k" value="4" step="0.5"></label>
+  </details>
+  <details name="menu"><summary><label><input type="checkbox" id="courbes" checked> Courbes</label></summary>
+    <label>Haut <select id="hautT"><option>aucun</option><option selected>bosse</option><option>creux</option></select></label>
+    <label>↳ flèche / largeur <span><input type="number" id="hautS" value="5" step="0.5"> <input type="number" id="hautL" value="70" step="5"></span></label>
+    <label>Bas <select id="basT"><option selected>aucun</option><option>bosse</option><option>creux</option></select></label>
+    <label>↳ flèche / largeur <span><input type="number" id="basS" value="5" step="0.5"> <input type="number" id="basL" value="70" step="5"></span></label>
+    <label>Côtés <select id="cotT"><option selected>aucun</option><option>bosse</option><option>creux</option></select></label>
+    <label>↳ flèche / largeur <span><input type="number" id="cotS" value="4" step="0.5"> <input type="number" id="cotL" value="60" step="5"></span></label>
+  </details>
+  <details name="menu"><summary>Texte du fond</summary>
+    <textarea id="txt" rows="2"></textarea>
+    <label>Place <select id="tpos"><option value="1">sous la pièce</option><option value="-1">au-dessus</option></select></label>
+    <label>Taille <input type="number" id="fs" value="3.5" step="0.5"></label>
+    <label>Décaler ↔ / ↑ <span><input type="number" id="tdx" value="0" step="0.5"> <input type="number" id="tdy" value="0" step="0.5"></span></label>
+    <label>Police <input id="font" value="Helvetica Neue" style="width:120px"></label>
+  </details>
+  <details name="menu"><summary><label><input type="checkbox" id="plat"> Balcon</label></summary>
+    <label>Profondeur <input type="number" id="pp" value="15" step="1"></label>
+    <label>Arrondi devant <input type="number" id="pr" value="5" step="0.5"></label>
+    <label>Monter ↑ <input type="number" id="ph" value="0" step="0.5"></label>
+    <label>Épaisseur MDF <input type="number" id="ep" value="3" step="0.1"></label>
+    <label>Kerf <input type="number" id="kerf" value="0.2" step="0.05"></label>
+    <label>Jeu des pattes <input type="number" id="jp" value="0.15" step="0.05"></label>
+  </details>
+  <details name="menu"><summary>Exporter</summary>
+    <button type="button" id="export">💾 SVG pour le laser</button>
+    <button type="button" id="imprimer">🖨️ Imprimer à l'échelle 1:1</button>
+  </details>
+</form>
+<main id="vue"></main>
+
+<script>
+const $ = id => document.getElementById(id);
+const v = id => +$(id).value;
+const d0 = new Date();
+$('txt').value = `Grillé le\n${String(d0.getDate()).padStart(2, '0')}/${String(d0.getMonth() + 1).padStart(2, '0')}/${d0.getFullYear()}`;
+
+const arc = (cx, cy, r, a0, a1, n = 24) =>
+  Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; });
+
+// Arc de cercle centré sur u=0, bord à v=e, demi-longueur c, flèche s (>0 vers l'extérieur) ; points pour u de 0 à c
+function bosse(e, c, s) {
+  s = Math.sign(s) * Math.min(Math.abs(s), s < 0 ? c / 3 : c * 0.6); // creux trop profond = fente sur le contour extérieur ; bosse trop haute = champignon
+  if (!s || c <= 0) return [[0, e]];
+  const S = Math.abs(s), sg = Math.sign(s), R = (c * c + S * S) / (2 * S), cv = e + s - sg * R;
+  return Array.from({ length: 25 }, (_, i) => { const u = c * i / 24; return [u, cv + sg * Math.sqrt(Math.max(0, R * R - u * u))]; });  // max : au bout de l'arc, l'arrondi donnait √(-0,000…) = NaN → point au centre
+}
+
+// Quart haut-droit de la fenêtre, de (0,h) à (w,0), y vers le haut
+function quart(w, h, k, coin, hor, ver) {
+  const p = bosse(h, hor.L * (w - k), hor.s);
+  switch (coin) {
+    case 'droit': p.push([w, h]); break;
+    case 'chanfrein': p.push([w - k, h], [w, h - k]); break;
+    case 'arrondi': p.push(...arc(w - k, h - k, k, Math.PI / 2, 0)); break;
+    case 'creux': p.push(...arc(w, h, k, Math.PI, 1.5 * Math.PI)); break;
+    case 'cran': p.push([w - k, h], [w - k, h - k], [w, h - k]); break;
+    case 'double': p.push([w - k, h], [w - k, h - k / 2], [w - k / 2, h - k / 2], [w - k / 2, h - k], [w, h - k]); break;
+  }
+  bosse(w, ver.L * (h - k), ver.s).reverse().forEach(([u, x]) => p.push([x, u]));
+  return p;
+}
+
+const courbe = n => ({ s: $('courbes').checked ? { aucun: 0, bosse: 1, creux: -1 }[$(n + 'T').value] * v(n + 'S') : 0, L: v(n + 'L') / 100 });
+
+// Place autour du composant (h = haut, b = bas, c = chaque côté) ; par défaut : le jeu partout + la place du texte
+function margesAuto() {
+  const j = v('jeu'), t = v('tz'), dessus = v('tpos') < 0;
+  return { h: j + (dessus ? t : 0), b: j + (dessus ? 0 : t), c: j };
+}
+const marges = () => $('marges').checked ? { h: v('mh'), b: v('mb'), c: v('mc') } : margesAuto();
+
+function fenetre() {
+  const coin = $('coin').value, k = coin === 'droit' ? 0 : v('k');
+  const mange = { droit: 0, chanfrein: 0.5, arrondi: 0.3 }[coin] ?? 1; // de combien le coin entame le rectangle
+  const haut = courbe('haut'), bas = courbe('bas'), cot = courbe('cot');
+  const creux = c => Math.max(0, -c.s);
+  const M = marges(), w = v('ow') / 2 + M.c + mange * k + creux(cot);
+  const h = (v('oh') + M.h + M.b) / 2 + mange * k + Math.max(creux(haut), creux(bas));
+  const tr = quart(w, h, k, coin, haut, cot);
+  const br = quart(w, h, k, coin, bas, cot).map(([x, y]) => [x, -y]).reverse();
+  const bl = br.map(([x, y]) => [-x, y]).reverse();
+  const tl = tr.map(([x, y]) => [-x, y]).reverse();
+  return [...tr, ...br, ...bl, ...tl];
+}
+
+// ponytail: les courbes sont des polygones (pas d'arcs SVG) ; assez fin pour le laser
+function decale(poly, d) {
+  const S = 1000, co = new ClipperLib.ClipperOffset(10, 0.005 * S), out = [];
+  co.AddPath(poly.map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round(y * S) })), ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
+  co.Execute(out, d * S);
+  return out.map(p => p.map(q => [q.X / S, q.Y / S]));
+}
+
+const chemin = (polys, dx, dy) => polys.map(p => 'M' + p.map(([x, y]) => `${(x + dx).toFixed(3)},${(dy - y).toFixed(3)}`).join('L') + 'Z').join('');
+
+// Balcon vu de dessus : y=0 = bord contre le fond, y>0 vers l'avant ; les pattes traversent le fond
+// Kerf : tenons dessinés plus larges et fentes plus étroites de la largeur du trait laser, pour un emboîtement serré
+const pL = () => v('ow');  // le balcon a toujours la largeur du composant
+const tenon = () => Math.min(10, pL() / 4);
+const pattes = () => pL() > 50 ? [-pL() / 4, pL() / 4] : [0];  // une patte au milieu jusqu'à 50 mm, deux au-delà
+function plateau() {
+  const L = pL(), P = v('pp'), r = Math.min(v('pr'), L / 2, P), ep = v('ep'), t = tenon() + v('kerf');
+  const p = [[-L / 2, 0]];
+  for (const c of pattes()) p.push([c - t / 2, 0], [c - t / 2, -ep], [c + t / 2, -ep], [c + t / 2, 0]);
+  return [...p, [L / 2, 0], ...arc(L / 2 - r, P - r, r, 0, Math.PI / 2), ...arc(-L / 2 + r, P - r, r, Math.PI / 2, Math.PI)];
+}
+function fentes(sy) {  // sy = dessus du balcon, sur le fond
+  const t = tenon() - v('kerf') + v('jp'), h = v('ep') - v('kerf') + v('jp'), yc = sy - v('ep') / 2;
+  return pattes().map(c => [[c - t / 2, yc - h / 2], [c + t / 2, yc - h / 2], [c + t / 2, yc + h / 2], [c - t / 2, yc + h / 2]]);
+}
+
+function dessine() {
+  const f = fenetre(), tour = v('tour'), e = v('trait'), sgn = v('tpos');  // sgn = -1 : texte au-dessus, pièce en dessous
+  const M = marges(), oh = v('oh'), oy = (M.b - M.h) / 2;  // oy = centre du composant (y vers le haut)
+  const yTexte = sgn > 0 ? (oy - oh / 2 - (oh + M.h + M.b) / 2) / 2 : (oy + oh / 2 + (oh + M.h + M.b) / 2) / 2;  // milieu de la place libre
+  const ext = decale(f, tour);
+  const xs = ext.flat().map(p => p[0]), ys = ext.flat().map(p => p[1]);
+  const W = Math.max(...xs) - Math.min(...xs), H = Math.max(...ys) - Math.min(...ys), m = 2, ecart = 10;
+  const ax = m - Math.min(...xs), ay = m + Math.max(...ys), bx = ax + W + ecart;
+  const plat = $('plat').checked, sy = oy - oh / 2 + v('ph'), pl = plat ? plateau() : [], fe = plat ? fentes(sy) : [];
+  const px = bx + Math.max(...xs) + ecart + pL() / 2, py = m + v('pp');
+  const L = 2 * m + 2 * W + ecart + (plat ? ecart + pL() : 0), Ht = 2 * m + Math.max(H, plat ? v('pp') + v('ep') : 0);
+  const coupe = 'fill="none" stroke="#000" stroke-width="0.1"';
+  const lignes = $('txt').value.split('\n'), fs = v('fs'), lh = fs * 1.25;
+  const ty0 = -yTexte - (lignes.length - 1) * lh / 2 + fs * 0.35 - v('tdy'), ty = ay + ty0, tx = v('tdx');
+  const anneau = [...decale(f, tour / 2 + e / 2), ...decale(f, tour / 2 - e / 2)];
+  // une ligne = un <text> à hauteur absolue : LightBurn/Illustrator ignorent les décalages dy des tspan (lignes superposées)
+  const texte = (x, y, coul) => `<g class="texte">${lignes.map((l, i) =>
+      `<text x="${x}" y="${(y + i * lh).toFixed(3)}" font-family="${$('font').value}" font-size="${fs}" fill="${coul}" text-anchor="middle">${l.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('')}</g>`;
+  $('mdf').innerHTML = `<svg viewBox="${Math.min(...xs) - 2} ${-Math.max(...ys) - 2} ${W + 4} ${H + 4}">
+  <defs><filter id="ombre"><feDropShadow dx="0.6" dy="0.8" stdDeviation="0.6" flood-opacity="0.5"/></filter></defs>
+  <path d="${chemin(ext, 0, 0)}" fill="#c9a27a" stroke="#4a2c14" stroke-width="0.3"/>
+  ${texte(tx, ty0, '#5a3a1e')}
+  <rect x="${-v('ow') / 2}" y="${-oy - oh / 2}" width="${v('ow')}" height="${v('oh')}" rx="1" fill="#1f5c3a"/>
+  <g filter="url(#ombre)">
+    <path d="${chemin([...ext, f], 0, 0)}" fill="#d4ad85" fill-rule="evenodd" stroke="#4a2c14" stroke-width="0.3"/>
+    <path d="${chemin(anneau, 0, 0)}" fill="#5a3a1e" fill-rule="evenodd"/>
+  </g>
+  ${plat ? `<rect x="${-pL() / 2}" y="${-sy}" width="${pL()}" height="${v('ep')}" fill="#d4ad85" stroke="#4a2c14" stroke-width="0.3" filter="url(#ombre)"/>` : ''}</svg>`;
+  $('vue').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${L.toFixed(2)}mm" height="${Ht.toFixed(2)}mm" viewBox="0 0 ${L.toFixed(3)} ${Ht.toFixed(3)}">
+  <g id="cadre">
+    <path d="${chemin(ext, ax, ay)}" ${coupe}/>
+    <path d="${chemin(anneau, ax, ay)}" fill="#0000ff" fill-rule="evenodd"/>
+    <path d="${chemin([f], ax, ay)}" ${coupe}/>
+    <rect class="apercu" x="${ax - v('ow') / 2}" y="${ay - oy - oh / 2}" width="${v('ow')}" height="${v('oh')}" fill="#0001" stroke="#999" stroke-width="0.2" stroke-dasharray="1"/>
+  </g>
+  <g id="fond">
+    <path d="${chemin([...ext, ...fe], bx, ay)}" ${coupe}/>
+    ${texte(bx + tx, ty, '#0000ff')}
+  </g>
+  ${plat ? `<g id="balcon"><path d="${chemin([pl], px, py)}" ${coupe}/></g>` : ''}</svg>`;
+  $('info').textContent = `Pièce : ${W.toFixed(1)} × ${H.toFixed(1)} mm (cadre + fond${plat ? ' + balcon' : ''}). Noir = découpe, bleu = gravure.`;
+}
+
+function hasard() {
+  const pick = a => a[Math.floor(Math.random() * a.length)], r = (a, b, p = 0.5) => Math.round((a + Math.random() * (b - a)) / p) * p;
+  $('courbes').checked = Math.random() < 0.85;
+  $('coin').value = pick(['droit', 'chanfrein', 'arrondi', 'creux', 'cran', 'cran', 'double']);
+  $('k').value = r(2.5, 7);
+  for (const n of ['haut', 'bas', 'cot']) {
+    $(n + 'T').value = pick(['aucun', 'bosse', 'bosse', 'creux']);
+    $(n + 'S').value = r(2, n === 'cot' ? 5 : 8);
+    $(n + 'L').value = r(40, 90, 5);
+  }
+  if (Math.random() < 0.5) for (const s of ['T', 'S', 'L']) $('bas' + s).value = $('haut' + s).value; // symétrique haut/bas
+  dessine();
+}
+
+function exporte() {
+  const vrai = $('vue').querySelector('svg'), svg = vrai.cloneNode(true);
+  // centrage écrit en dur (x = bord gauche mesuré) : certains logiciels laser ignorent text-anchor
+  const mesures = [...vrai.querySelectorAll('text')].map(t => t.getBBox().x);
+  svg.querySelectorAll('text').forEach((t, i) => { t.setAttribute('x', mesures[i].toFixed(3)); t.removeAttribute('text-anchor'); });
+  svg.querySelectorAll('.apercu').forEach(n => n.remove());
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svg.outerHTML], { type: 'image/svg+xml' }));
+  a.download = 'cadre_' + $('txt').value.replace(/[^\w-]+/g, '_').replace(/^_|_$/g, '') + '.svg';
+  a.click();
+}
+
+// unité à droite de chaque chiffre : % pour les largeurs de courbe (…L), mm pour tout le reste
+for (const i of document.querySelectorAll('input[type=number]')) {
+  const u = document.createElement('span'); u.className = 'unite'; i.replaceWith(u);
+  u.append(i, Object.assign(document.createElement('small'), { textContent: /L$/.test(i.id) ? '%' : 'mm' }));
+}
+$('f').addEventListener('input', dessine);
+for (const id of ['marges', 'courbes', 'plat']) $(id).addEventListener('change', () => { if ($(id).checked) $(id).closest('details').open = true; });
+$('marges').addEventListener('change', () => {  // en cochant, on part des valeurs du moment
+  if (!$('marges').checked) return;
+  const m = margesAuto(); $('mh').value = m.h; $('mb').value = m.b; $('mc').value = m.c; dessine();
+});
+// glisser le texte à la souris (grand plan ou aperçu MDF) : met à jour les cases de décalage
+let glisse = null;
+for (const id of ['vue', 'mdf']) $(id).addEventListener('pointerdown', ev => {
+  const b = $(id).querySelector('.texte').getBoundingClientRect();  // tout le pavé du texte, pas seulement les lettres
+  if (ev.clientX >= b.left && ev.clientX <= b.right && ev.clientY >= b.top && ev.clientY <= b.bottom) { glisse = { id, x: ev.clientX, y: ev.clientY, dx: v('tdx'), dy: v('tdy') }; ev.preventDefault(); }
+});
+addEventListener('pointermove', ev => {
+  if (!glisse) return;
+  const k = $(glisse.id).querySelector('svg').getScreenCTM().a;  // pixels par mm
+  const aimant = d => Math.abs(d) < 1.5 ? 0 : +d.toFixed(1);  // magnétisme : à moins de 1,5 mm, le texte se recentre
+  $('tdx').value = aimant(glisse.dx + (ev.clientX - glisse.x) / k);
+  $('tdy').value = aimant(glisse.dy - (ev.clientY - glisse.y) / k);
+  dessine();
+});
+addEventListener('pointerup', () => glisse = null);
+$('hasard').onclick = hasard;
+$('export').onclick = exporte;
+$('imprimer').onclick = () => {  // taille en mm écrite sur le svg le temps de l'impression (à l'écran il remplit la fenêtre)
+  const svg = $('vue').querySelector('svg');
+  svg.style.width = svg.getAttribute('width'); svg.style.height = svg.getAttribute('height');
+  print();
+  svg.style.width = svg.style.height = '';
+};
+dessine();
+</script>
+</body>
+</html>
