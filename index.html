@@ -31,6 +31,14 @@
   summary { font-weight: 600; cursor: pointer; }
   summary label { display: inline-flex; margin: 0; font-size: 14px; }
   svg text { cursor: move; user-select: none; pointer-events: bounding-box; }
+  @media (max-width: 700px) {  /* téléphone : réglages puis plan, l'un sous l'autre */
+    body { flex-direction: column; height: auto; }
+    form { width: auto; overflow: visible; border-right: none; }
+    main { height: 70vh; padding: 8px; }
+    #mdf { height: 150px; }  /* l'aperçu collé en haut ne mange pas tout l'écran */
+  }
+  #mdf svg, main svg { touch-action: none; }  /* glisser le texte au doigt sans faire défiler la page */
+  .discret { font-size: 12px; padding: 4px; background: none; border: none; color: #888; text-decoration: underline; }
   @media print {  /* seulement le plan, en vraie grandeur */
     form { display: none; } body { display: block; height: auto; background: #fff; }
     main { display: block; padding: 0; } main svg { box-shadow: none; } .apercu { display: none; }
@@ -98,7 +106,9 @@
   <fieldset><legend>📤 Exporter</legend>
     <button type="button" id="export">💾 SVG pour le laser</button>
     <button type="button" id="imprimer">🖨️ Imprimer à l'échelle 1:1</button>
+    <label><span><input type="checkbox" id="traces" checked> Texte en tracés dans le SVG</span></label>
   </fieldset>
+  <button type="button" id="defaut" class="discret">↺ Remettre tous les réglages de départ</button>
 </form>
 <main id="vue"></main>
 <dialog id="mollo"><form method="dialog">
@@ -148,7 +158,13 @@ function margesAuto() {
   return { h: j + (dessus ? t : 0), b: j + (dessus ? 0 : t), c: j };
 }
 const marges = () => ({ h: v('mh'), b: v('mb'), c: v('mc') });
-function remplitMarges() { const m = margesAuto(); $('mh').value = m.h; $('mb').value = m.b; $('mc').value = m.c; }
+// jeu, place du texte ou position changés : la marge suit, en gardant l'écart des retouches faites à la main
+let autoAvant = margesAuto();
+function suitMarges() {
+  const a = margesAuto();
+  for (const [c, id] of [['h', 'mh'], ['b', 'mb'], ['c', 'mc']]) $(id).value = Math.max(0, v(id) + a[c] - autoAvant[c]);
+  autoAvant = a;
+}
 
 function fenetre() {
   const M = marges(), coin = $('coin').value;
@@ -235,6 +251,7 @@ function dessine() {
     ${texte(bx + tx, ty, '#0000ff')}
   </g>
   ${plat ? `<g id="balcon"><path d="${chemin([pl], px, py)}" ${coupe}/></g>` : ''}</svg>`;
+  try { localStorage.setItem('cadre', JSON.stringify(Object.fromEntries(reglages().map(e => [e.id, e.type === 'checkbox' ? e.checked : e.value])))); } catch (e) {}
   $('info').textContent = `Pièce : ${W.toFixed(1)} × ${H.toFixed(1)} mm (cadre + fond${plat ? ' + balcon' : ''}). Noir = découpe, bleu = gravure.`;
 }
 
@@ -252,11 +269,50 @@ function hasard() {
   dessine();
 }
 
-function exporte() {
+// police installée → objet opentype.js (Chrome/Edge seulement : Local Font Access, avec une autorisation la 1re fois)
+async function policeLocale(nom) {
+  if (!window.queryLocalFonts) return null;
+  const n = nom.toLowerCase(), polices = await queryLocalFonts();
+  const famille = polices.filter(f => f.family.toLowerCase() === n), rang = f => ['regular', 'normal', 'roman', 'book', 'medium'].indexOf(f.style.toLowerCase()) >>> 0;
+  const p = polices.find(f => f.fullName.toLowerCase() === n) || famille.sort((a, b) => rang(a) - rang(b))[0];  // le style le plus « normal »
+  if (!p) return null;
+  if (!window.opentype) await new Promise((ok, ko) => document.head.append(Object.assign(document.createElement('script'), { src: 'opentype.min.js', onload: ok, onerror: ko })));
+  return sfnt(await (await p.blob()).arrayBuffer(), p.postscriptName);
+}
+// .ttc (plusieurs polices dans un fichier, presque toutes celles du Mac) : opentype.js ne lit qu'une police seule,
+// on recopie donc chaque police du lot dans son propre fichier et on garde celle qui porte le bon nom
+function sfnt(buf, ps) {
+  const d = new DataView(buf);
+  if (d.getUint32(0) !== 0x74746366) return opentype.parse(buf);  // pas 'ttcf' : police seule
+  let premiere;
+  for (let i = 0; i < d.getUint32(8); i++) {
+    const o = d.getUint32(12 + 4 * i), nt = d.getUint16(o + 4), tete = 12 + 16 * nt;
+    const tables = Array.from({ length: nt }, (_, k) => ({ off: d.getUint32(o + 20 + 16 * k), len: d.getUint32(o + 24 + 16 * k) }));
+    const out = new Uint8Array(tables.reduce((t, x) => t + ((x.len + 3) & ~3), tete)), od = new DataView(out.buffer);
+    out.set(new Uint8Array(buf, o, tete));
+    let p = tete;
+    tables.forEach((t, k) => { out.set(new Uint8Array(buf, t.off, t.len), p); od.setUint32(20 + 16 * k, p); p += (t.len + 3) & ~3; });
+    const f = opentype.parse(out.buffer);
+    if (f.names.postScriptName?.en === ps) return f;
+    premiere ??= f;
+  }
+  return premiere;
+}
+
+async function exporte() {
   const vrai = $('vue').querySelector('svg'), svg = vrai.cloneNode(true);
-  // centrage écrit en dur (x = bord gauche mesuré) : certains logiciels laser ignorent text-anchor
-  const mesures = [...vrai.querySelectorAll('text')].map(t => t.getBBox().x);
-  svg.querySelectorAll('text').forEach((t, i) => { t.setAttribute('x', mesures[i].toFixed(3)); t.removeAttribute('text-anchor'); });
+  const mesures = [...vrai.querySelectorAll('text')].map(t => t.getBBox().x);  // bord gauche de chaque ligne, mesuré à l'écran
+  let police = null;
+  if ($('traces').checked) try { police = await policeLocale($('font').value); } catch (e) { console.warn(e); }
+  if ($('traces').checked && !police) $('info').textContent = `Police « ${$('font').value} » pas lue (il faut Chrome ou Edge, et accepter l'accès aux polices) : le texte reste du texte, vectorise-le dans le logiciel du laser.`;
+  svg.querySelectorAll('text').forEach((t, i) => {
+    if (police) {  // la ligne devient un tracé, à la même place
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'), fs = +t.getAttribute('font-size');
+      p.setAttribute('d', police.getPath(t.textContent, +t.getAttribute('x') - police.getAdvanceWidth(t.textContent, fs) / 2, +t.getAttribute('y'), fs).toPathData(3));
+      p.setAttribute('fill', t.getAttribute('fill'));
+      t.replaceWith(p);
+    } else { t.setAttribute('x', mesures[i].toFixed(3)); t.removeAttribute('text-anchor'); }  // certains logiciels laser ignorent text-anchor
+  });
   svg.querySelectorAll('.apercu').forEach(n => n.remove());
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svg.outerHTML], { type: 'image/svg+xml' }));
@@ -302,7 +358,7 @@ let ppAvant = v('pp');  // le message ne vient qu'au passage au-dessus de 50, pa
 $('pp').addEventListener('input', () => { if (v('pp') > 50 && ppAvant <= 50) $('mollo').showModal(); ppAvant = v('pp'); });
 $('plat').addEventListener('change', () => { if ($('plat').checked) $('plat').closest('details').open = true; });
 // le jeu, la place du texte ou sa position recalculent la marge ; ensuite on peut la retoucher à la main
-for (const id of ['jeu', 'tz', 'tpos']) $(id).addEventListener('input', remplitMarges);
+for (const id of ['jeu', 'tz', 'tpos']) $(id).addEventListener('input', suitMarges);
 // glisser le texte à la souris (grand plan ou aperçu MDF) : met à jour les cases de décalage
 let glisse = null;
 for (const id of ['vue', 'mdf']) $(id).addEventListener('pointerdown', ev => {
@@ -327,7 +383,15 @@ $('imprimer').onclick = () => {  // taille en mm écrite sur le svg le temps de 
   print();
   svg.style.width = svg.style.height = '';
 };
-remplitMarges();
+// réglages gardés d'une visite à l'autre (pas le texte : la date du jour reste proposée)
+const reglages = () => [...$('f').querySelectorAll('input[id], select[id]')].filter(e => e.id !== 'txt');
+try {
+  const g = JSON.parse(localStorage.getItem('cadre') || 'null');
+  if (g) for (const e of reglages()) if (e.id in g) e[e.type === 'checkbox' ? 'checked' : 'value'] = g[e.id];
+} catch (e) {}
+if (!$('mh').value) { const m = margesAuto(); $('mh').value = m.h; $('mb').value = m.b; $('mc').value = m.c; }
+autoAvant = margesAuto(); ppAvant = v('pp');
+$('defaut').onclick = () => { try { localStorage.removeItem('cadre'); } catch (e) {} location.reload(); };
 dessine();
 </script>
 </body>

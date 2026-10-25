@@ -22,8 +22,10 @@ Pas de graveuse laser ? Une imprimante et un cutter suffisent (voir [Version pap
 - **🎨 Personnalisation** : la marge autour du composant, la largeur du cadre, les coins et les courbes (choisis sur des vignettes), la taille et la police du texte (aperçu de chaque police).
 - **Balcon** : une petite étagère de la largeur du composant, pour les objets qui tiennent debout. Ses pattes s'emboîtent dans le fond (une seule patte jusqu'à 50 mm, deux au-delà).
 - **Aperçu MDF** : les pièces superposées, en couleur bois.
-- **Export SVG** en millimètres : noir = découpe, bleu = gravure.
+- **Export SVG** en millimètres : noir = découpe, bleu = gravure. Dans Chrome ou Edge, le texte est changé en tracés : pas besoin d'avoir la police sur l'ordinateur du laser.
 - **Version imprimable** : impression à l'échelle 1:1, anneau en noir. Pas besoin de laser, un cutter suffit.
+- **Réglages gardés** d'une visite à l'autre (sauf le texte, pour garder la date du jour), avec un lien pour tout remettre à zéro.
+- **Sur téléphone** aussi : les réglages en haut, le plan en dessous, et le texte se glisse au doigt.
 
 ![Un cadre large avec le texte au-dessus et le balcon](images/appli_balcon.png)
 
@@ -47,7 +49,8 @@ Dans le menu **Balcon** :
 
 Une seule page HTML, sans installation ni serveur. Les contours décalés sont calculés avec
 [Clipper](https://sourceforge.net/projects/jsclipper/) d'Angus Johnson, en version JavaScript par Timo (`clipper.js`, licence Boost 1.0).
+Le texte en tracés utilise [opentype.js](https://github.com/opentypejs/opentype.js) (`opentype.min.js`, licence MIT) et l'accès aux polices de Chrome et Edge.
 
-Le texte reste du texte dans le SVG : si la police n'est pas installée là où tu ouvres le fichier, vectorise-le avant de graver.
+Sur Safari et Firefox, le texte reste du texte dans le SVG : si la police n'est pas installée là où tu ouvres le fichier, vectorise-le avant de graver.
 
 Licence MIT.
