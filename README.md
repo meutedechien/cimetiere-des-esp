@@ -46,7 +46,7 @@ Dans le menu **Balcon** :
 ## Technique
 
 Une seule page HTML, sans installation ni serveur. Les contours décalés sont calculés avec
-[Clipper](https://sourceforge.net/projects/jsclipper/) d'Angus Johnson (version JavaScript de Timo) (`clipper.js`, licence Boost 1.0).
+[Clipper](https://sourceforge.net/projects/jsclipper/) d'Angus Johnson, en version JavaScript par Timo (`clipper.js`, licence Boost 1.0).
 
 Le texte reste du texte dans le SVG : si la police n'est pas installée là où tu ouvres le fichier, vectorise-le avant de graver.
 
