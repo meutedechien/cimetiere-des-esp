@@ -17,12 +17,19 @@
   main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
   main svg { width: 100%; height: 100%; background: #fff; box-shadow: 0 1px 6px #0002; }
   #mdf { position: sticky; top: -14px; z-index: 1; background: #fff; padding: 6px 0; height: 220px; border-bottom: 1px solid #eee; }  /* reste visible quand on fait défiler les réglages */
+  .vignettes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 2px 0 6px; }
+  .vignettes button { width: auto; padding: 2px; margin: 0; background: #fff; border: 1px solid #ccc; border-radius: 4px; }
+  #polices { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 2px 0 6px; }
+  #polices button { font-size: 14px; padding: 5px 2px; margin: 0; background: #fff; border: 1px solid #ccc; border-radius: 4px; white-space: nowrap; overflow: hidden; }
+  .vignettes button.choisi, #polices button.choisi { border: 2px solid #06f; background: #eef4ff; }
+  dialog form { width: auto; border: none; padding: 0; background: none; }  /* pas le style du panneau de gauche */
+  dialog { border: none; border-radius: 10px; box-shadow: 0 4px 24px #0004; text-align: center; }
   #mdf svg { width: 100%; height: 100%; }
   #info { font-size: 12px; color: #666; }
   details { border: 1px solid #ddd; border-radius: 6px; margin: 0 0 10px; padding: 6px 12px; }
+  details details { margin: 6px 0 4px; }
   summary { font-weight: 600; cursor: pointer; }
   summary label { display: inline-flex; margin: 0; font-size: 14px; }
-  #f:has(#marges:checked) .auto { display: none; }
   svg text { cursor: move; user-select: none; pointer-events: bounding-box; }
   @media print {  /* seulement le plan, en vraie grandeur */
     form { display: none; } body { display: block; height: auto; background: #fff; }
@@ -36,60 +43,74 @@
   <button type="button" id="hasard">🎲 Un autre cadre</button>
   <div id="mdf"></div>
   <p id="info"></p>
-  <fieldset><legend>Composant</legend>
-    <label>Largeur <input type="number" id="ow" value="25" step="0.5"></label>
-    <label>Hauteur <input type="number" id="oh" value="34" step="0.5"></label>
-    <label class="auto">Jeu autour <input type="number" id="jeu" value="3" step="0.5"></label>
-    <label class="auto">Place pour le texte <input type="number" id="tz" value="14" step="0.5"></label>
-  </fieldset>
-  <details name="menu"><summary><label><input type="checkbox" id="marges"> Espacement manuel</label></summary>
-    <label>En haut <input type="number" id="mh" step="0.5"></label>
-    <label>En bas <input type="number" id="mb" step="0.5"></label>
-    <label>Chaque côté <input type="number" id="mc" step="0.5"></label>
-  </details>
-  <details name="menu"><summary>Cadre</summary>
-    <label>Largeur du tour <input type="number" id="tour" value="7" step="0.5"></label>
-    <label>Épaisseur ligne <input type="number" id="trait" value="1.5" step="0.1"></label>
-    <label>Coins <select id="coin">
-      <option value="droit">droits</option><option value="chanfrein">chanfrein</option>
-      <option value="arrondi">arrondis</option><option value="creux">creux</option>
-      <option value="cran" selected>cran</option><option value="double">double cran</option>
-    </select></label>
-    <label>Taille des coins <input type="number" id="k" value="4" step="0.5"></label>
-  </details>
-  <details name="menu"><summary><label><input type="checkbox" id="courbes" checked> Courbes</label></summary>
-    <label>Haut <select id="hautT"><option>aucun</option><option selected>bosse</option><option>creux</option></select></label>
-    <label>↳ flèche / largeur <span><input type="number" id="hautS" value="5" step="0.5"> <input type="number" id="hautL" value="70" step="5"></span></label>
-    <label>Bas <select id="basT"><option selected>aucun</option><option>bosse</option><option>creux</option></select></label>
-    <label>↳ flèche / largeur <span><input type="number" id="basS" value="5" step="0.5"> <input type="number" id="basL" value="70" step="5"></span></label>
-    <label>Côtés <select id="cotT"><option selected>aucun</option><option>bosse</option><option>creux</option></select></label>
-    <label>↳ flèche / largeur <span><input type="number" id="cotS" value="4" step="0.5"> <input type="number" id="cotL" value="60" step="5"></span></label>
-  </details>
-  <details name="menu"><summary>Texte du fond</summary>
+  <fieldset><legend>🔌 Composant</legend>
+    <label>Largeur <input type="number" id="ow" value="25" min="1" step="0.5"></label>
+    <label>Hauteur <input type="number" id="oh" value="34" min="1" step="0.5"></label>
+    <label for="txt">Texte</label>
     <textarea id="txt" rows="2"></textarea>
-    <label>Place <select id="tpos"><option value="1">sous la pièce</option><option value="-1">au-dessus</option></select></label>
-    <label>Taille <input type="number" id="fs" value="3.5" step="0.5"></label>
-    <label>Décaler ↔ / ↑ <span><input type="number" id="tdx" value="0" step="0.5"> <input type="number" id="tdy" value="0" step="0.5"></span></label>
-    <label>Police <input id="font" value="Helvetica Neue" style="width:120px"></label>
+  </fieldset>
+  <details name="top"><summary>🎨 Personnalisation</summary>
+    <label>Jeu autour <input type="number" id="jeu" value="3" min="0" step="0.5"></label>
+    <label>Place pour le texte <input type="number" id="tz" value="14" min="0" step="0.5"></label>
+    <details name="menu"><summary>📏 Marge</summary>
+      <label>En haut <input type="number" id="mh" min="0" step="0.5"></label>
+      <label>En bas <input type="number" id="mb" min="0" step="0.5"></label>
+      <label>Chaque côté <input type="number" id="mc" min="0" step="0.5"></label>
+    </details>
+    <details name="menu"><summary>🖼️ Cadre</summary>
+      <label>Largeur du cadre <input type="number" id="tour" value="7" min="1" step="0.5"></label>
+      <label>Épaisseur ligne centrale <input type="number" id="trait" value="1.5" min="0.1" step="0.1"></label>
+      <label>Coins</label>
+      <select id="coin" hidden>
+        <option value="droit">droits</option><option value="chanfrein">chanfrein</option>
+        <option value="arrondi">arrondis</option><option value="creux">creux</option>
+        <option value="cran" selected>cran</option><option value="double">double cran</option>
+      </select>
+      <label>Taille des coins <input type="number" id="k" value="4" min="0" step="0.5"></label>
+    </details>
+    <details name="menu"><summary>〰️ Courbes</summary>
+      <label>Haut</label>
+      <select id="hautT" hidden><option>aucun</option><option selected>bosse</option><option>creux</option></select>
+      <label>↳ flèche / largeur <span><input type="number" id="hautS" value="5" min="0" step="0.5"> <input type="number" id="hautL" value="70" min="0" max="100" step="5"></span></label>
+      <label>Bas</label>
+      <select id="basT" hidden><option selected>aucun</option><option>bosse</option><option>creux</option></select>
+      <label>↳ flèche / largeur <span><input type="number" id="basS" value="5" min="0" step="0.5"> <input type="number" id="basL" value="70" min="0" max="100" step="5"></span></label>
+      <label>Côtés</label>
+      <select id="cotT" hidden><option selected>aucun</option><option>bosse</option><option>creux</option></select>
+      <label>↳ flèche / largeur <span><input type="number" id="cotS" value="4" min="0" step="0.5"> <input type="number" id="cotL" value="60" min="0" max="100" step="5"></span></label>
+    </details>
+    <details name="menu"><summary>🔤 Texte</summary>
+      <label>Place <select id="tpos"><option value="1">sous la pièce</option><option value="-1">au-dessus</option></select></label>
+      <label>Taille <input type="number" id="fs" value="3.5" min="0.5" step="0.5"></label>
+      <label>Décaler ↔ / ↑ <span><input type="number" id="tdx" value="0" step="0.5"> <input type="number" id="tdy" value="0" step="0.5"></span></label>
+      <label>Police <input id="font" value="Helvetica Neue" style="width:120px"></label>
+      <div id="polices"></div>
+    </details>
   </details>
-  <details name="menu"><summary><label><input type="checkbox" id="plat"> Balcon</label></summary>
-    <label>Profondeur <input type="number" id="pp" value="15" step="1"></label>
-    <label>Arrondi devant <input type="number" id="pr" value="5" step="0.5"></label>
-    <label>Monter ↑ <input type="number" id="ph" value="0" step="0.5"></label>
-    <label>Épaisseur MDF <input type="number" id="ep" value="3" step="0.1"></label>
-    <label>Kerf <input type="number" id="kerf" value="0.2" step="0.05"></label>
-    <label>Jeu des pattes <input type="number" id="jp" value="0.15" step="0.05"></label>
+  <details name="top"><summary><label><input type="checkbox" id="plat"> 🪴 Balcon</label></summary>
+    <label>Profondeur <input type="number" id="pp" value="15" min="1" step="1"></label>
+    <label>Arrondi devant <input type="number" id="pr" value="5" min="0" step="0.5"></label>
+    <label>Monter ↑ <input type="number" id="ph" value="0" min="0" step="0.5"></label>
+    <label>Épaisseur MDF <input type="number" id="ep" value="3" min="0.5" max="10" step="0.1"></label>
+    <label>Kerf <input type="number" id="kerf" value="0.2" min="0" max="0.5" step="0.05"></label>
+    <label>Jeu des pattes <input type="number" id="jp" value="0.15" min="0" max="1" step="0.05"></label>
   </details>
-  <details name="menu"><summary>Exporter</summary>
+  <fieldset><legend>📤 Exporter</legend>
     <button type="button" id="export">💾 SVG pour le laser</button>
     <button type="button" id="imprimer">🖨️ Imprimer à l'échelle 1:1</button>
-  </details>
+  </fieldset>
 </form>
 <main id="vue"></main>
+<dialog id="mollo"><form method="dialog">
+  <p style="font-size:18px; margin:0 0 6px">😬 Oh là, mollo mollo !</p>
+  <p style="margin:0 0 12px">Plus de 50 mm de balcon, ça risque de pencher.</p>
+  <button>Continuer quand même</button>
+</form></dialog>
 
 <script>
 const $ = id => document.getElementById(id);
-const v = id => +$(id).value;
+// valeur lue dans ses bornes min/max : une case vide, négative ou trop grande ne casse pas le dessin
+const v = id => { const e = $(id); return Math.min(Math.max(+e.value || 0, e.min ? +e.min : -Infinity), e.max ? +e.max : Infinity); };
 const d0 = new Date();
 $('txt').value = `Grillé le\n${String(d0.getDate()).padStart(2, '0')}/${String(d0.getMonth() + 1).padStart(2, '0')}/${d0.getFullYear()}`;
 
@@ -119,28 +140,30 @@ function quart(w, h, k, coin, hor, ver) {
   return p;
 }
 
-const courbe = n => ({ s: $('courbes').checked ? { aucun: 0, bosse: 1, creux: -1 }[$(n + 'T').value] * v(n + 'S') : 0, L: v(n + 'L') / 100 });
+const courbe = n => ({ s: { aucun: 0, bosse: 1, creux: -1 }[$(n + 'T').value] * v(n + 'S'), L: v(n + 'L') / 100 });
 
 // Place autour du composant (h = haut, b = bas, c = chaque côté) ; par défaut : le jeu partout + la place du texte
 function margesAuto() {
   const j = v('jeu'), t = v('tz'), dessus = v('tpos') < 0;
   return { h: j + (dessus ? t : 0), b: j + (dessus ? 0 : t), c: j };
 }
-const marges = () => $('marges').checked ? { h: v('mh'), b: v('mb'), c: v('mc') } : margesAuto();
+const marges = () => ({ h: v('mh'), b: v('mb'), c: v('mc') });
+function remplitMarges() { const m = margesAuto(); $('mh').value = m.h; $('mb').value = m.b; $('mc').value = m.c; }
 
 function fenetre() {
-  const coin = $('coin').value, k = coin === 'droit' ? 0 : v('k');
+  const M = marges(), coin = $('coin').value;
+  const k = coin === 'droit' ? 0 : Math.min(v('k'), v('ow') / 2 + M.c, (v('oh') + M.h + M.b) / 2);  // coin plus grand que la fenêtre = contour croisé
   const mange = { droit: 0, chanfrein: 0.5, arrondi: 0.3 }[coin] ?? 1; // de combien le coin entame le rectangle
   const haut = courbe('haut'), bas = courbe('bas'), cot = courbe('cot');
   const creux = c => Math.max(0, -c.s);
-  const M = marges(), w = v('ow') / 2 + M.c + mange * k + creux(cot);
+  const w = v('ow') / 2 + M.c + mange * k + creux(cot);
   const h = (v('oh') + M.h + M.b) / 2 + mange * k + Math.max(creux(haut), creux(bas));
   const tr = quart(w, h, k, coin, haut, cot);
   const br = quart(w, h, k, coin, bas, cot).map(([x, y]) => [x, -y]).reverse();
-  const bl = br.map(([x, y]) => [-x, y]).reverse();
-  const tl = tr.map(([x, y]) => [-x, y]).reverse();
-  return [...tr, ...br, ...bl, ...tl];
+  return entier(tr, br);
 }
+// quarts haut-droit et bas-droit → contour complet (miroir gauche)
+const entier = (tr, br) => [...tr, ...br, ...br.map(([x, y]) => [-x, y]).reverse(), ...tr.map(([x, y]) => [-x, y]).reverse()];
 
 // ponytail: les courbes sont des polygones (pas d'arcs SVG) ; assez fin pour le laser
 function decale(poly, d) {
@@ -150,6 +173,7 @@ function decale(poly, d) {
   return out.map(p => p.map(q => [q.X / S, q.Y / S]));
 }
 
+const echappe = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const chemin = (polys, dx, dy) => polys.map(p => 'M' + p.map(([x, y]) => `${(x + dx).toFixed(3)},${(dy - y).toFixed(3)}`).join('L') + 'Z').join('');
 
 // Balcon vu de dessus : y=0 = bord contre le fond, y>0 vers l'avant ; les pattes traversent le fond
@@ -164,19 +188,22 @@ function plateau() {
   return [...p, [L / 2, 0], ...arc(L / 2 - r, P - r, r, 0, Math.PI / 2), ...arc(-L / 2 + r, P - r, r, Math.PI / 2, Math.PI)];
 }
 function fentes(sy) {  // sy = dessus du balcon, sur le fond
-  const t = tenon() - v('kerf') + v('jp'), h = v('ep') - v('kerf') + v('jp'), yc = sy - v('ep') / 2;
+  const t = Math.max(0.5, tenon() - v('kerf') + v('jp')), h = v('ep') - v('kerf') + v('jp'), yc = sy - v('ep') / 2;
   return pattes().map(c => [[c - t / 2, yc - h / 2], [c + t / 2, yc - h / 2], [c + t / 2, yc + h / 2], [c - t / 2, yc + h / 2]]);
 }
 
 function dessine() {
-  const f = fenetre(), tour = v('tour'), e = v('trait'), sgn = v('tpos');  // sgn = -1 : texte au-dessus, pièce en dessous
+  for (const b of document.querySelectorAll('.vignettes button')) b.classList.toggle('choisi', b.dataset.v === $(b.parentNode.dataset.sel).value);
+  for (const b of $('polices').children) b.classList.toggle('choisi', b.textContent === $('font').value);
+  const f = fenetre(), tour = v('tour'), e = Math.min(v('trait'), tour - 0.2), sgn = v('tpos');  // sgn = -1 : texte au-dessus, pièce en dessous
   const M = marges(), oh = v('oh'), oy = (M.b - M.h) / 2;  // oy = centre du composant (y vers le haut)
   const yTexte = sgn > 0 ? (oy - oh / 2 - (oh + M.h + M.b) / 2) / 2 : (oy + oh / 2 + (oh + M.h + M.b) / 2) / 2;  // milieu de la place libre
   const ext = decale(f, tour);
   const xs = ext.flat().map(p => p[0]), ys = ext.flat().map(p => p[1]);
   const W = Math.max(...xs) - Math.min(...xs), H = Math.max(...ys) - Math.min(...ys), m = 2, ecart = 10;
   const ax = m - Math.min(...xs), ay = m + Math.max(...ys), bx = ax + W + ecart;
-  const plat = $('plat').checked, sy = oy - oh / 2 + v('ph'), pl = plat ? plateau() : [], fe = plat ? fentes(sy) : [];
+  // balcon dans la fenêtre : pas plus haut que son bord haut, et assez de place dessous pour l'épaisseur des pattes
+  const plat = $('plat').checked, sy = Math.max(oy - oh / 2 + Math.min(v('ph'), oh + M.h - 0.5), oy - oh / 2 - M.b + v('ep')), pl = plat ? plateau() : [], fe = plat ? fentes(sy) : [];
   const px = bx + Math.max(...xs) + ecart + pL() / 2, py = m + v('pp');
   const L = 2 * m + 2 * W + ecart + (plat ? ecart + pL() : 0), Ht = 2 * m + Math.max(H, plat ? v('pp') + v('ep') : 0);
   const coupe = 'fill="none" stroke="#000" stroke-width="0.1"';
@@ -185,7 +212,7 @@ function dessine() {
   const anneau = [...decale(f, tour / 2 + e / 2), ...decale(f, tour / 2 - e / 2)];
   // une ligne = un <text> à hauteur absolue : LightBurn/Illustrator ignorent les décalages dy des tspan (lignes superposées)
   const texte = (x, y, coul) => `<g class="texte">${lignes.map((l, i) =>
-      `<text x="${x}" y="${(y + i * lh).toFixed(3)}" font-family="${$('font').value}" font-size="${fs}" fill="${coul}" text-anchor="middle">${l.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('')}</g>`;
+      `<text x="${x}" y="${(y + i * lh).toFixed(3)}" font-family="${echappe($('font').value)}" font-size="${fs}" fill="${coul}" text-anchor="middle">${echappe(l)}</text>`).join('')}</g>`;
   $('mdf').innerHTML = `<svg viewBox="${Math.min(...xs) - 2} ${-Math.max(...ys) - 2} ${W + 4} ${H + 4}">
   <defs><filter id="ombre"><feDropShadow dx="0.6" dy="0.8" stdDeviation="0.6" flood-opacity="0.5"/></filter></defs>
   <path d="${chemin(ext, 0, 0)}" fill="#c9a27a" stroke="#4a2c14" stroke-width="0.3"/>
@@ -213,7 +240,6 @@ function dessine() {
 
 function hasard() {
   const pick = a => a[Math.floor(Math.random() * a.length)], r = (a, b, p = 0.5) => Math.round((a + Math.random() * (b - a)) / p) * p;
-  $('courbes').checked = Math.random() < 0.85;
   $('coin').value = pick(['droit', 'chanfrein', 'arrondi', 'creux', 'cran', 'cran', 'double']);
   $('k').value = r(2.5, 7);
   for (const n of ['haut', 'bas', 'cot']) {
@@ -222,6 +248,7 @@ function hasard() {
     $(n + 'L').value = r(40, 90, 5);
   }
   if (Math.random() < 0.5) for (const s of ['T', 'S', 'L']) $('bas' + s).value = $('haut' + s).value; // symétrique haut/bas
+  if (Math.random() < 0.15) for (const n of ['haut', 'bas', 'cot']) $(n + 'T').value = 'aucun'; // de temps en temps, sans courbe
   dessine();
 }
 
@@ -233,7 +260,7 @@ function exporte() {
   svg.querySelectorAll('.apercu').forEach(n => n.remove());
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + svg.outerHTML], { type: 'image/svg+xml' }));
-  a.download = 'cadre_' + $('txt').value.replace(/[^\w-]+/g, '_').replace(/^_|_$/g, '') + '.svg';
+  a.download = ['cadre', $('txt').value.replace(/[^\p{L}\d-]+/gu, '_').replace(/^_|_$/g, '')].filter(Boolean).join('_') + '.svg';
   a.click();
 }
 
@@ -243,11 +270,39 @@ for (const i of document.querySelectorAll('input[type=number]')) {
   u.append(i, Object.assign(document.createElement('small'), { textContent: /L$/.test(i.id) ? '%' : 'mm' }));
 }
 $('f').addEventListener('input', dessine);
-for (const id of ['marges', 'courbes', 'plat']) $(id).addEventListener('change', () => { if ($(id).checked) $(id).closest('details').open = true; });
-$('marges').addEventListener('change', () => {  // en cochant, on part des valeurs du moment
-  if (!$('marges').checked) return;
-  const m = margesAuto(); $('mh').value = m.h; $('mb').value = m.b; $('mc').value = m.c; dessine();
+// en quittant une case hors bornes, elle affiche la valeur vraiment utilisée
+$('f').addEventListener('change', ({ target: e }) => { if (e.type === 'number' && e.value !== '' && +e.value !== v(e.id)) e.value = v(e.id); });
+// polices courantes sur Mac, chacune écrite dans sa police ; la case Police reste libre pour une autre
+for (const p of ['Helvetica Neue', 'Avenir Next', 'Futura', 'Georgia', 'Didot', 'American Typewriter', 'Courier New', 'Copperplate', 'Marker Felt', 'Snell Roundhand']) {
+  const b = Object.assign(document.createElement('button'), { type: 'button', textContent: p });
+  b.style.fontFamily = `"${p}"`;
+  b.onclick = () => { $('font').value = p; dessine(); };
+  $('polices').append(b);
+}
+// vignettes à la place des listes (select caché juste avant) : un petit cadre dessiné pour chaque choix
+function vignettes(id, forme) {
+  const d = Object.assign(document.createElement('div'), { className: 'vignettes' });
+  d.dataset.sel = id;
+  for (const o of $(id).options) {
+    const [tr, br] = forme(o.value), b = Object.assign(document.createElement('button'), { type: 'button', title: o.text });
+    b.dataset.v = o.value;
+    b.innerHTML = `<svg viewBox="0 0 28 28" width="100%"><path d="${chemin([entier(tr, br.map(([x, y]) => [x, -y]).reverse())], 14, 14)}" fill="#d9b48a" stroke="#5a3a1a" stroke-width="0.8"/></svg>`;
+    b.onclick = () => { $(id).value = o.value; dessine(); };
+    d.append(b);
+  }
+  $(id).after(d);
+}
+const lisse = { L: 0, s: 0 }, q = (coin, h, b, c) => [quart(10, 10, coin === 'droit' ? 0 : 4, coin, h, c), quart(10, 10, coin === 'droit' ? 0 : 4, coin, b, c)];
+vignettes('coin', c => q(c, lisse, lisse, lisse));
+for (const n of ['haut', 'bas', 'cot']) vignettes(n + 'T', t => {
+  const c = { L: 0.7, s: { aucun: 0, bosse: 3, creux: -3 }[t] }, f = m => m === n ? c : lisse;
+  return q('droit', f('haut'), f('bas'), f('cot'));
 });
+let ppAvant = v('pp');  // le message ne vient qu'au passage au-dessus de 50, pas à chaque chiffre
+$('pp').addEventListener('input', () => { if (v('pp') > 50 && ppAvant <= 50) $('mollo').showModal(); ppAvant = v('pp'); });
+$('plat').addEventListener('change', () => { if ($('plat').checked) $('plat').closest('details').open = true; });
+// le jeu, la place du texte ou sa position recalculent la marge ; ensuite on peut la retoucher à la main
+for (const id of ['jeu', 'tz', 'tpos']) $(id).addEventListener('input', remplitMarges);
 // glisser le texte à la souris (grand plan ou aperçu MDF) : met à jour les cases de décalage
 let glisse = null;
 for (const id of ['vue', 'mdf']) $(id).addEventListener('pointerdown', ev => {
@@ -263,6 +318,7 @@ addEventListener('pointermove', ev => {
   dessine();
 });
 addEventListener('pointerup', () => glisse = null);
+addEventListener('pointercancel', () => glisse = null);
 $('hasard').onclick = hasard;
 $('export').onclick = exporte;
 $('imprimer').onclick = () => {  // taille en mm écrite sur le svg le temps de l'impression (à l'écran il remplit la fenêtre)
@@ -271,6 +327,7 @@ $('imprimer').onclick = () => {  // taille en mm écrite sur le svg le temps de 
   print();
   svg.style.width = svg.style.height = '';
 };
+remplitMarges();
 dessine();
 </script>
 </body>

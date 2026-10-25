@@ -18,8 +18,8 @@ Pas de graveuse laser ? Une imprimante et un cutter suffisent (voir [Version pap
 
 - **Deux pièces** : le cadre (contour, fenêtre, ligne épaisse gravée au milieu du tour) et le fond (même contour, texte gravé).
 - **🎲 Un autre cadre** : tire au hasard les coins (droits, chanfrein, arrondis, creux, cran, double cran) et les courbes (bosse ou creux en haut, en bas, sur les côtés).
-- **Texte** : « Grillé le » + la date du jour, modifiable. Sous le composant ou au-dessus, et déplaçable à la souris (il se recentre tout seul près du milieu).
-- **Espacement manuel** : la place libre en haut, en bas et sur les côtés, au millimètre.
+- **Texte** : « Grillé le » + la date du jour, modifiable. Sous le composant ou au-dessus, en plusieurs polices, et déplaçable à la souris (il se recentre tout seul près du milieu).
+- **🎨 Personnalisation** : la marge autour du composant, la largeur du cadre, les coins et les courbes (choisis sur des vignettes), la taille et la police du texte (aperçu de chaque police).
 - **Balcon** : une petite étagère de la largeur du composant, pour les objets qui tiennent debout. Ses pattes s'emboîtent dans le fond (une seule patte jusqu'à 50 mm, deux au-delà).
 - **Aperçu MDF** : les pièces superposées, en couleur bois.
 - **Export SVG** en millimètres : noir = découpe, bleu = gravure.
